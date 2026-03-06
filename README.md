@@ -156,9 +156,6 @@ If the plugin doesn't load or you have encountered any bugs, please check out ou
 | **Version** | v1.0.2 |
 | **Published** | Dec 23, 2025 |
 | **Last Updated** | Mar 6, 2026 |
-| **Downloads** | 82 |
-| **File Size** | 31.6 KB |
-| **License** | Free EULA |
 | **Open Source** | Yes |
 
 ---
