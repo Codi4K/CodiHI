@@ -1,0 +1,78 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.codi'
+version = '1.0.2'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'papermc'
+        url = 'https://repo.papermc.io/repository/maven-public/'
+    }
+    maven {
+        name = 'placeholderapi'
+        url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/'
+        content {
+            includeGroup "me.clip"
+        }
+    }
+    // Backup repository for PlaceholderAPI
+    maven {
+        name = 'jitpack'
+        url = 'https://jitpack.io'
+    }
+    // bStats repository
+    maven {
+        name = 'bstats'
+        url = 'https://repo.codemc.org/repository/maven-public/'
+    }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT'
+    compileOnly 'com.github.PlaceholderAPI:PlaceholderAPI:2.11.5'
+    // bStats for plugin metrics
+    implementation 'org.bstats:bstats-bukkit:3.0.2'
+}
+
+def targetJavaVersion = 17
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release = targetJavaVersion
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    destinationDirectory.set(file("$buildDir/libs"))
+
+    // Only shade bStats, exclude everything else
+    dependencies {
+        exclude { it.moduleGroup != 'org.bstats' }
+    }
+
+    // Relocate bStats to avoid conflicts with other plugins
+    relocate 'org.bstats', 'com.codi.bstats'
+}

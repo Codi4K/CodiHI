@@ -1,0 +1,9 @@
+name: CodiHI
+version: 1.0.2
+main: com.codi.healthindicator.CodiHI
+api-version: '1.20'
+author: CodiMC
+description: Health Indicator plugin with PlaceholderAPI support (Paper/Folia/Spigot compatible)
+depend:
+  - PlaceholderAPI
+folia-supported: true
