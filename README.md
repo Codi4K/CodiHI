@@ -1,5 +1,5 @@
 # 💛 CodiHI — Health Indicator
-### v1.0.2 | PlaceholderAPI Expansion for Minecraft
+### PlaceholderAPI Expansion for Minecraft
 
 > A lightweight Minecraft plugin that displays player health using PlaceholderAPI placeholders with visual heart indicators.
 
