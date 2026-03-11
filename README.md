@@ -123,7 +123,6 @@ belowname-objective:
 | Platform | Supported |
 |---|---|
 | Paper | ✅ |
-| Spigot | ✅ |
 | Folia | ✅ Full thread-safety support |
 
 The plugin automatically detects your server type on startup.
