@@ -25,8 +25,8 @@
 | Requirement | Details |
 |---|---|
 | [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) | ⚠️ Required — plugin will not work without this! |
-| Minecraft Server | 1.20.1 or higher |
-| Server Software | Paper, Spigot, or Folia |
+| Minecraft Server | 1.21 or higher |
+| Server Software | Paper or Folia |
 
 ---
 
