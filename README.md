@@ -47,7 +47,7 @@ Use these placeholders anywhere PlaceholderAPI is supported (chat plugins, score
 
 | Placeholder | Description | Example Output |
 |---|---|---|
-| `%codihi_health%` | Current health with a heart icon | `20 ❤` (red) or `24 ❤` (yellow when absorbing) |
+| `%codihi_health%` | Current health with a heart icon | `20 ❤` - normal hp I `4 ❤` - absorption hp |
 | `%codihi_health_current%` | Current health as a plain number | `20` |
 | `%codihi_health_max%` | Maximum health as a plain number | `20` |
 
