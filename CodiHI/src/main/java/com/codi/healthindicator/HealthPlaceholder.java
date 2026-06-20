@@ -1,4 +1,4 @@
-package com.codi.healthindicator;
+package xyz.codimc.healthindicator;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
@@ -8,147 +8,122 @@ import org.jetbrains.annotations.NotNull;
 public class HealthPlaceholder extends PlaceholderExpansion {
 
     private final CodiHI plugin;
-    // Using MiniMessage format for color
-    private static final String HEART = "<color:#DB1010>❤</color>";
-    private static final String ABSORPTION_HEART = "<color:#E5CD00>❤</color>";
+
+    private static final String HEART     = "<color:#DB1010><shadow:#370404:1>❤</shadow></color>";
+    private static final String ABS_HEART = "<color:#E5CD00><shadow:#393300:1>❤</shadow></color>";
 
     public HealthPlaceholder(CodiHI plugin) {
         this.plugin = plugin;
     }
 
-    @Override
-    @NotNull
-    public String getIdentifier() {
-        return "codihi";
-    }
-
-    @Override
-    @NotNull
-    public String getAuthor() {
-        return plugin.getDescription().getAuthors().toString();
-    }
-
-    @Override
-    @NotNull
-    public String getVersion() {
-        return plugin.getDescription().getVersion();
-    }
-
-    @Override
-    public boolean persist() {
-        return true;
-    }
+    @Override @NotNull public String getIdentifier() { return "codihi"; }
+    @Override @NotNull public String getAuthor()     { return plugin.getDescription().getAuthors().toString(); }
+    @Override @NotNull public String getVersion()    { return plugin.getDescription().getVersion(); }
+    @Override public boolean persist()               { return true; }
 
     @Override
     public String onPlaceholderRequest(Player player, @NotNull String params) {
-        if (player == null) {
-            return "";
-        }
+        if (player == null) return "";
 
-        // Get health values safely (Folia-compatible)
-        int currentHealth = getHealthSafely(player);
-        int maxHealth = getMaxHealthSafely(player);
-        int absorption = getAbsorptionSafely(player);
+        double rawHealth     = getHealthSafely(player);
+        double rawMax        = getMaxHealthSafely(player);
+        double rawAbsorption = getAbsorptionSafely(player);
 
-        // %codihi_health% - Shows current health with heart
+        // %codihi_health%
+        // Whole numbers: "20 ❤"  |  Fractions: "16.23 ❤"
+        // With absorption: "20 ❤ | 4 ❤"
         if (params.equalsIgnoreCase("health")) {
-            if (absorption > 0) {
-                // When player has absorption, show total health + absorption with yellow heart after
-                return (currentHealth + absorption) + " " + ABSORPTION_HEART;
+            String healthStr = formatHealth(rawHealth) + " " + HEART;
+            if (rawAbsorption > 0) {
+                return healthStr + " <color:#AAAAAA>|</color> " + formatHealth(rawAbsorption) + " " + ABS_HEART;
             }
-            // Normal health, show health with red heart after
-            return currentHealth + " " + HEART;
+            return healthStr;
         }
 
-        // %codihi_health_current% - Just current health number
+        // %codihi_health_current%
+        // Whole part of health + absorption (floor, so 23.50 -> "23" not "24")
         if (params.equalsIgnoreCase("health_current")) {
-            return String.valueOf(currentHealth);
+            return String.valueOf((int) (rawHealth + rawAbsorption));
         }
 
-        // %codihi_health_max% - Just max health number
+        // %codihi_health_max%
         if (params.equalsIgnoreCase("health_max")) {
-            return String.valueOf(maxHealth);
+            return formatHealth(rawMax);
         }
 
-        // %codihi_absorption% - Just absorption amount
+        // %codihi_absorption%
         if (params.equalsIgnoreCase("absorption")) {
-            return String.valueOf(absorption);
+            return formatHealth(rawAbsorption);
         }
 
-        // %codihi_health_hearts% - Visual hearts representation
-        if (params.equalsIgnoreCase("health_hearts")) {
-            int hearts = (int) Math.ceil(currentHealth / 2.0);
-            StringBuilder result = new StringBuilder();
-            for (int i = 0; i < hearts; i++) {
-                result.append(HEART);
-            }
-            return result.toString();
+        // %codihi_old_health%
+        // Combined health + absorption as a single number: "24 ❤"
+        // Uses yellow heart when absorption is active, red heart otherwise
+        if (params.equalsIgnoreCase("old_health")) {
+            double total = rawHealth + rawAbsorption;
+            String heart = rawAbsorption > 0 ? ABS_HEART : HEART;
+            return formatHealth(total) + " " + heart;
         }
 
-        // %codihi_absorption_hearts% - Visual absorption hearts
-        if (params.equalsIgnoreCase("absorption_hearts")) {
-            if (absorption > 0) {
-                int absHearts = (int) Math.ceil(absorption / 2.0);
-                StringBuilder result = new StringBuilder();
-                for (int i = 0; i < absHearts; i++) {
-                    result.append(ABSORPTION_HEART);
-                }
-                return result.toString();
-            }
-            return "";
+        // %codihi_old_health_decimal%
+        // Decimal portion only of health + absorption: total 24.58 -> ".58"
+        // Whole numbers return an empty string
+        if (params.equalsIgnoreCase("old_health_decimal")) {
+            double total = rawHealth + rawAbsorption;
+            return formatDecimalOnly(total);
         }
 
-        // %codihi_health_bar% - Full health bar with both types
-        if (params.equalsIgnoreCase("health_bar")) {
-            int hearts = (int) Math.ceil(currentHealth / 2.0);
-            StringBuilder bar = new StringBuilder();
-            for (int i = 0; i < hearts; i++) {
-                bar.append(HEART);
-            }
+        // %codihi_heart_icon%
+        // Dynamic heart icon with no number, color reflects current state
+        // Yellow when absorption is active, red otherwise
+        if (params.equalsIgnoreCase("heart_icon")) {
+            return rawAbsorption > 0 ? ABS_HEART : HEART;
+        }
 
-            if (absorption > 0) {
-                int absHearts = (int) Math.ceil(absorption / 2.0);
-                bar.append(" ");
-                for (int i = 0; i < absHearts; i++) {
-                    bar.append(ABSORPTION_HEART);
-                }
-            }
-            return bar.toString();
+        // %codihi_normal_health%
+        // Static plain red heart icon, independent of absorption state
+        if (params.equalsIgnoreCase("normal_health")) {
+            return HEART;
         }
 
         return null;
     }
 
-    // Folia-safe method to get health
-    private int getHealthSafely(Player player) {
-        if (plugin.getServerType().isFolia()) {
-            // On Folia, ensure we're on the right thread
-            return (int) Math.round(player.getHealth());
-        } else {
-            // On Paper/Spigot, direct access is fine
-            return (int) Math.round(player.getHealth());
+    /**
+     * Returns only the decimal portion of a value, including the leading dot.
+     * Whole numbers (or infinite values) return an empty string.
+     * Example: 24.58 -> ".58"  |  24.0 -> ""
+     */
+    private String formatDecimalOnly(double value) {
+        if (value == Math.floor(value) && !Double.isInfinite(value)) {
+            return "";
         }
+        String formatted = String.format("%.2f", value);
+        int dotIndex = formatted.indexOf('.');
+        return dotIndex >= 0 ? formatted.substring(dotIndex) : "";
     }
 
-    // Folia-safe method to get max health
-    private int getMaxHealthSafely(Player player) {
-        if (plugin.getServerType().isFolia()) {
-            // On Folia, ensure we're on the right thread
-            return (int) Math.round(player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
-        } else {
-            // On Paper/Spigot, direct access is fine
-            return (int) Math.round(player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+    /**
+     * Whole numbers → no decimal ("20", "16", "4")
+     * Fractions     → 2 decimals ("16.23", "9.50")
+     */
+    private String formatHealth(double value) {
+        if (value == Math.floor(value) && !Double.isInfinite(value)) {
+            return String.valueOf((int) value);
         }
+        return String.format("%.2f", value);
     }
 
-    // Folia-safe method to get absorption
-    private int getAbsorptionSafely(Player player) {
-        if (plugin.getServerType().isFolia()) {
-            // On Folia, ensure we're on the right thread
-            return (int) Math.round(player.getAbsorptionAmount());
-        } else {
-            // On Paper/Spigot, direct access is fine
-            return (int) Math.round(player.getAbsorptionAmount());
-        }
+    private double getHealthSafely(Player player) {
+        return player.getHealth();
+    }
+
+    private double getMaxHealthSafely(Player player) {
+        var attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attr != null ? attr.getValue() : 20.0;
+    }
+
+    private double getAbsorptionSafely(Player player) {
+        return player.getAbsorptionAmount();
     }
 }
