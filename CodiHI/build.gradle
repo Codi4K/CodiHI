@@ -3,8 +3,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group = 'com.codi'
-version = '1.0.2'
+group = 'xyz.codimc'
+version = '1.0.5'
 
 repositories {
     mavenCentral()
