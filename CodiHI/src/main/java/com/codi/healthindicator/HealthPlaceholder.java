@@ -33,7 +33,7 @@ public class HealthPlaceholder extends PlaceholderExpansion {
         // Whole numbers: "20 ❤"  |  Fractions: "16.23 ❤"
         // With absorption: "20 ❤ | 4 ❤"
         if (params.equalsIgnoreCase("health")) {
-            String healthStr = formatHealth(rawHealth) + " " + HEART;
+            String healthStr = formatWithDecimalRule(rawHealth, rawHealth) + " " + HEART;
             if (rawAbsorption > 0) {
                 return healthStr + " <color:#AAAAAA>|</color> " + formatHealth(rawAbsorption) + " " + ABS_HEART;
             }
@@ -62,7 +62,7 @@ public class HealthPlaceholder extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("old_health")) {
             double total = rawHealth + rawAbsorption;
             String heart = rawAbsorption > 0 ? ABS_HEART : HEART;
-            return formatHealth(total) + " " + heart;
+            return formatWithDecimalRule(total, rawHealth) + " " + heart;
         }
 
         // %codihi_old_health_decimal%
@@ -70,6 +70,9 @@ public class HealthPlaceholder extends PlaceholderExpansion {
         // Whole numbers return an empty string
         if (params.equalsIgnoreCase("old_health_decimal")) {
             double total = rawHealth + rawAbsorption;
+            if (!isDecimalDisplayEnabled() && rawHealth >= 2.0) {
+                return ""; // stays in sync with %codihi_old_health% showing a whole number
+            }
             return formatDecimalOnly(total);
         }
 
@@ -114,12 +117,26 @@ public class HealthPlaceholder extends PlaceholderExpansion {
         return String.format("%.2f", value);
     }
 
+    /**
+     * Reads the "decimal-display" setting from config.yml (default true).
+     */
+    private boolean isDecimalDisplayEnabled() {
+        return plugin.getConfig().getBoolean("decimal-display", true);
+    }
+
+    private String formatWithDecimalRule(double displayValue, double thresholdValue) {
+        if (isDecimalDisplayEnabled() || thresholdValue < 2.0) {
+            return formatHealth(displayValue);
+        }
+        return String.valueOf((int) Math.floor(displayValue));
+    }
+
     private double getHealthSafely(Player player) {
         return player.getHealth();
     }
 
     private double getMaxHealthSafely(Player player) {
-        var attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        var attr = player.getAttribute(Attribute.MAX_HEALTH);
         return attr != null ? attr.getValue() : 20.0;
     }
 
